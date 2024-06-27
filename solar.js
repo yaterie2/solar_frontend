@@ -83,7 +83,7 @@ function animate() {
 }
 
 async function fetchCelestialBodies() {
-  const url = "https://solarapp-api.yannick-schwab.de/api/celestialBodies";
+  const url = `https://starapp-api.yannick-schwab.de/api/allbodies?isPlanet=true`;
   try {
     const response = await axios.get(url);
     const bodies = response.data; // Assuming data structure is an array of celestial bodies
