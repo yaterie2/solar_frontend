@@ -1532,7 +1532,6 @@ const planets = [
     mainAnomaly: 14.53,
     argPeriapsis: 113.175,
     longAscNode: 110.088,
-    bodyType: "Planet",
   },
 ];
 
