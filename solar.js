@@ -82,6 +82,7 @@ function animate() {
   controls.update(); // Update orbit controls
 }
 
+
 async function fetchCelestialBodies() {
   const url = `https://solarapp-api.yannick-schwab.de/api/allbodies?isPlanet=true`;
   try {
