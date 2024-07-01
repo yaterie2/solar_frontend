@@ -185,8 +185,8 @@ function init() {
 const API_URL = "https://solarapp-api.yannick-schwab.de" || "http://localhost:3001/api";
 
 async function fetchPlanetsData() {
-  const planetsUrl = `${API_URL}/api/allbodies?isPlanet=true`;
-  const sunUrl = `${API_URL}/api/allbodies?isPlanet=false&bodyType=Star`;
+  const planetsUrl = `${API_URL}/planets?isPlanet=true`;
+  const sunUrl = `${API_URL}/sun?isPlanet=false&bodyType=Star`;
   const plutoUrl = `${API_URL}/api/allbodies?englishName=Pluto`;
 
   try {
