@@ -5,7 +5,7 @@ export default defineConfig({
   // other config options
   build: {
     rollupOptions: {
-      external: ["axios"], // Add other dependencies here if needed
+    //   external: ["axios"], // Add other dependencies here if needed
     },
   },
 });
