@@ -182,12 +182,13 @@ function init() {
   });
 }
 
-const API_URL = "https://solarapp-api.yannick-schwab.de" || "http://localhost:3001/api";
+const API_URL =
+  "https://solarapp-api.yannick-schwab.de" || "http://localhost:3001";
 
 async function fetchPlanetsData() {
-  const planetsUrl = `${API_URL}/planets?isPlanet=true`;
-  const sunUrl = `${API_URL}/sun?isPlanet=false&bodyType=Star`;
-  const plutoUrl = `${API_URL}/api/allbodies?englishName=Pluto`;
+  const planetsUrl = `${API_URL}/planets`;
+  const sunUrl = `${API_URL}/sun`;
+  const plutoUrl = `${API_URL}/body/Pluto`;
 
   try {
     console.log("Fetching planets...");
@@ -234,46 +235,9 @@ async function fetchPlanetsData() {
       rel: planet.rel,
     }));
 
-    const sunData = sunResponse.data.bodies.find(
-      (body) => body.englishName === "Sun"
-    );
+    const sunData = sunResponse.data.sun;
 
-    const plutoData = plutoResponse.data.bodies
-      .filter((body) => body.englishName === "Pluto")
-      .map((planet) => ({
-        id: planet.id,
-        name: planet.name,
-        englishName: planet.englishName,
-        moons: planet.moons,
-        semimajorAxis: planet.semimajorAxis,
-        perihelion: planet.perihelion,
-        aphelion: planet.aphelion,
-        eccentricity: planet.eccentricity,
-        inclination: planet.inclination,
-        mass: planet.mass,
-        vol: planet.vol,
-        density: planet.density,
-        gravity: planet.gravity,
-        escape: planet.escape,
-        meanRadius: planet.meanRadius,
-        equaRadius: planet.equaRadius,
-        polarRadius: planet.polarRadius,
-        flattening: planet.flattening,
-        dimension: planet.dimension,
-        sideralOrbit: planet.sideralOrbit,
-        sideralRotation: planet.sideralRotation,
-        aroundPlanet: planet.aroundPlanet,
-        discoveredBy: planet.discoveredBy,
-        discoveryDate: planet.discoveryDate,
-        alternativeName: planet.alternativeName,
-        axialTilt: planet.axialTilt,
-        avgTemp: planet.avgTemp,
-        mainAnomaly: planet.mainAnomaly,
-        argPeriapsis: planet.argPeriapsis,
-        longAscNode: planet.longAscNode,
-        bodyType: planet.bodyType,
-        rel: planet.rel,
-      }))[0];
+    const plutoData = plutoResponse.data.body;
 
     console.log("Planets fetched:", planetsData);
     console.log("Sun fetched:", sunData);
