@@ -182,8 +182,7 @@ function init() {
   });
 }
 
-const API_URL =
-  "https://solarapp-api.yannick-schwab.de" || "http://localhost:3001";
+const API_URL = "https://solarapp-api.yannick-schwab.de";
 
 async function fetchPlanetsData() {
   const planetsUrl = `${API_URL}/planets`;
