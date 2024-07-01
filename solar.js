@@ -182,7 +182,7 @@ function init() {
   });
 }
 
-const API_URL = process.env.REACT_APP_API_URL || process.env.VITE_API_BASE_URL;
+const API_URL = "https://solarapp-api.yannick-schwab.de" || "http://localhost:3001/api";
 
 async function fetchPlanetsData() {
   const planetsUrl = `${API_URL}/api/planets`;
