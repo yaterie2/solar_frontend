@@ -4,7 +4,7 @@ import axios from "axios";
 import { setupInteraction, onClick, toggleHighlight } from "./interaction";
 
 let scene, camera, renderer, controls, raycaster, mouse;
-
+let speedMultiplier = 600; // Increased speed multiplier
 const planetTranslations = {
   Mercury: "Merkur",
   Venus: "Venus",
@@ -18,7 +18,6 @@ const planetTranslations = {
   Sun: "Sonne",
 };
 
-// Initialize Three.js components
 function init() {
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(
@@ -47,17 +46,19 @@ function init() {
   raycaster = new THREE.Raycaster();
   mouse = new THREE.Vector2();
 
-  // Setup interaction after initializing mouse, raycaster, scene, and camera
   setupInteraction(mouse, raycaster, scene, camera, planetTranslations);
 
-  // Add event listener for clicks
   window.addEventListener("click", onClick);
 
-  // Fetch data and render planets
+  const speedSlider = document.getElementById("speedSlider");
+  speedSlider.addEventListener("input", (event) => {
+    const value = parseFloat(event.target.value);
+    speedMultiplier = (10 / value) ** 2;
+  });
+
   fetchDataAndRender();
 }
 
-// Function to fetch data and render planets
 async function fetchDataAndRender() {
   const API_URL = "https://solarapp-api.yannick-schwab.de/api";
   const planetsUrl = `${API_URL}/planets`;
@@ -81,7 +82,9 @@ async function fetchDataAndRender() {
   }
 }
 
-// Function to render planets
+let planetMeshes = [];
+let sphereMeshes = []; // To keep track of sphere meshes
+
 function renderPlanets(planetsData, sunData, plutoData) {
   const colors = {
     Mercury: 0xbfbfbf,
@@ -98,39 +101,33 @@ function renderPlanets(planetsData, sunData, plutoData) {
   const distanceScale = 1000;
   const sizeScale = 0.0001;
 
-  // Function to add planet mesh or sphere to interaction system
   function addPlanetSphere(mesh) {
-    // Example: Add event listener for hover
     mesh.addEventListener("mouseover", () => {
-      // Highlight the planet or sphere
-      mesh.material.color.setHex(0xff0000); // Example: Change color to red
+      mesh.material.color.setHex(0xff0000);
     });
 
-    // Example: Add event listener for click
     mesh.addEventListener("click", () => {
-      // Perform action when the planet or sphere is clicked
       console.log(`Clicked on ${mesh.name}`);
     });
-
-    // Add more interaction setup as needed
   }
 
-  // Render planets
+  // Remove existing spheres
+  sphereMeshes.forEach((sphereMesh) => {
+    scene.remove(sphereMesh);
+  });
+  sphereMeshes.length = 0;
+
   planetsData.forEach((planet) => {
     const planetColor = colors[planet.englishName] || 0xffffff;
     const planetSize = planet.meanRadius * sizeScale;
 
-    // Create planet mesh
     const planetGeometry = new THREE.SphereGeometry(planetSize, 32, 32);
     const planetMaterial = new THREE.MeshStandardMaterial({
       color: planetColor,
-      emissive: 0x111111,
-      emissiveIntensity: 0.1,
     });
     const planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
-    planetMesh.name = planet.englishName; // Assign name to the planet mesh
+    planetMesh.name = planet.englishName;
 
-    // Create orbit path
     const orbitPath = createOrbitPath(
       planet.semimajorAxis / distanceScale,
       planet.englishName === "Mercury" ||
@@ -142,18 +139,23 @@ function renderPlanets(planetsData, sunData, plutoData) {
       planet.longAscNode,
       planet.argPeriapsis
     );
-    orbitPath.name = "orbitHitbox"; // Name the orbit path for identification
-    orbitPath.add(planetMesh); // Add the planet as a child of the orbit
+    orbitPath.name = "orbitHitbox";
+    orbitPath.add(planetMesh);
 
     scene.add(orbitPath);
 
-    // Calculate position on orbit
-    const position = calculatePositionOnOrbit(planet, distanceScale, sizeScale);
+    planetMeshes.push({ mesh: planetMesh, data: planet });
+
+    const position = calculatePositionOnOrbit(
+      planet,
+      distanceScale,
+      sizeScale,
+      0
+    );
     planetMesh.position.copy(position);
 
-    // Add transparent sphere around the planet with conditional size adjustment for Pluto
     const sphereSizeMultiplier =
-      planet.englishName === "Pluto" ? 875000 : 50000; // Adjust as needed
+      planet.englishName === "Pluto" ? 875000 : 50000;
     const sphereGeometry = new THREE.SphereGeometry(
       planetSize * sphereSizeMultiplier,
       32,
@@ -161,28 +163,23 @@ function renderPlanets(planetsData, sunData, plutoData) {
     );
     const sphereMaterial = new THREE.MeshBasicMaterial({
       color: planetColor,
-      transparent: true,
-      opacity: 0.3, // Adjust the opacity as needed
       side: THREE.DoubleSide,
     });
     const sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
     sphereMesh.position.copy(position);
     scene.add(sphereMesh);
+    sphereMeshes.push(sphereMesh); // Store sphere mesh for later removal
 
-    // Add planet and sphere to interaction system
     addPlanetSphere(planetMesh);
     addPlanetSphere(sphereMesh);
 
-    // Render moons if they exist
     if (planet.moons) {
       planet.moons.forEach((moon, index) => {
         const moonSize = planet.meanRadius * 0.1 * sizeScale;
         const moonDistance = planet.meanRadius * 2 * (index + 1) * sizeScale;
 
         const moonGeometry = new THREE.SphereGeometry(moonSize, 16, 16);
-        const moonMaterial = new THREE.MeshBasicMaterial({
-          color: 0xaaaaaa,
-        });
+        const moonMaterial = new THREE.MeshBasicMaterial({ color: 0xaaaaaa });
         const moonMesh = new THREE.Mesh(moonGeometry, moonMaterial);
 
         const angle = (index / planet.moons.length) * 2 * Math.PI;
@@ -197,13 +194,10 @@ function renderPlanets(planetsData, sunData, plutoData) {
     }
   });
 
-  // Render Sun
   if (sunData) {
     const sunRadius = sunData.meanRadius * sizeScale;
     const sunGeometry = new THREE.SphereGeometry(sunRadius, 32, 32);
-    const sunMaterial = new THREE.MeshBasicMaterial({
-      color: 0xffff00,
-    });
+    const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
     const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
     sunMesh.position.set(0, 0, 0);
     scene.add(sunMesh);
@@ -215,12 +209,10 @@ function renderPlanets(planetsData, sunData, plutoData) {
     console.error("No Sun data fetched.");
   }
 
-  // Render Pluto
   if (plutoData) {
     const plutoColor = colors.Pluto || 0xfaa0a0;
     const plutoSize = plutoData.meanRadius * sizeScale;
 
-    // Create Pluto mesh
     const plutoGeometry = new THREE.SphereGeometry(plutoSize, 32, 32);
     const plutoMaterial = new THREE.MeshStandardMaterial({
       color: plutoColor,
@@ -228,36 +220,33 @@ function renderPlanets(planetsData, sunData, plutoData) {
       emissiveIntensity: 0.1,
     });
     const plutoMesh = new THREE.Mesh(plutoGeometry, plutoMaterial);
-    plutoMesh.name = "Pluto"; // Set the name of the Pluto mesh
+    plutoMesh.name = "Pluto";
 
-    // Create orbit path for Pluto
     const plutoOrbitPath = createOrbitPath(
       plutoData.semimajorAxis / distanceScale,
       plutoData.eccentricity,
       plutoData.inclination,
       plutoData.longAscNode,
       plutoData.argPeriapsis,
-      0xff0000 // Red color for Pluto's orbit
+      0xff0000
     );
-    plutoOrbitPath.name = "orbitHitbox"; // Name the orbit path for identification
+    plutoOrbitPath.name = "orbitHitbox";
 
-    plutoOrbitPath.add(plutoMesh); // Add Pluto as a child of the orbit
+    plutoOrbitPath.add(plutoMesh);
 
     scene.add(plutoOrbitPath);
 
-    // Calculate position on orbit for Pluto
+    planetMeshes.push({ mesh: plutoMesh, data: plutoData });
+
     const plutoPosition = calculatePositionOnOrbit(
       plutoData,
       distanceScale,
-      sizeScale
+      sizeScale,
+      0
     );
     plutoMesh.position.copy(plutoPosition);
 
-    // Add Pluto and its sphere to interaction system
-    addPlanetSphere(plutoMesh);
-
-    // Add transparent sphere around Pluto
-    const plutoSphereSize = plutoSize * 875000; // Adjusted size for Pluto's sphere
+    const plutoSphereSize = plutoSize * 875000;
     const plutoSphereGeometry = new THREE.SphereGeometry(
       plutoSphereSize,
       32,
@@ -265,8 +254,6 @@ function renderPlanets(planetsData, sunData, plutoData) {
     );
     const plutoSphereMaterial = new THREE.MeshBasicMaterial({
       color: plutoColor,
-      transparent: true,
-      opacity: 0.3,
       side: THREE.DoubleSide,
     });
     const plutoSphereMesh = new THREE.Mesh(
@@ -275,8 +262,9 @@ function renderPlanets(planetsData, sunData, plutoData) {
     );
     plutoSphereMesh.position.copy(plutoPosition);
     scene.add(plutoSphereMesh);
+    sphereMeshes.push(plutoSphereMesh); // Store sphere mesh for later removal
 
-    // Add Pluto's sphere to interaction system
+    addPlanetSphere(plutoMesh);
     addPlanetSphere(plutoSphereMesh);
   } else {
     console.error("No Pluto data fetched.");
@@ -285,37 +273,31 @@ function renderPlanets(planetsData, sunData, plutoData) {
   animate();
 }
 
-// Function to create orbit path
 function createOrbitPath(
   semimajorAxis,
   eccentricity,
   inclination = 0,
   longitudeAscendingNode = 0,
   argumentOfPeriapsis = 0,
-  color = 0xffffff // Default color
+  color = 0xffffff
 ) {
   const vertices = [];
   const numPoints = 500;
 
-  // Convert angles from degrees to radians
   inclination = THREE.MathUtils.degToRad(inclination);
   longitudeAscendingNode = THREE.MathUtils.degToRad(longitudeAscendingNode);
   argumentOfPeriapsis = THREE.MathUtils.degToRad(argumentOfPeriapsis);
 
   for (let i = 0; i <= numPoints; i++) {
     const anomaly = (i / numPoints) * 2 * Math.PI;
-
-    // Calculate radius based on true anomaly using Kepler's equation
     const radius =
       (semimajorAxis * (1 - eccentricity ** 2)) /
       (1 + eccentricity * Math.cos(anomaly));
 
-    // Position in the orbit plane
     const x = radius * Math.cos(anomaly + argumentOfPeriapsis);
     const y = radius * Math.sin(anomaly + argumentOfPeriapsis);
     const z = 0;
 
-    // Apply the longitude of ascending node rotation
     const xRotatedLongAscNode =
       x * Math.cos(longitudeAscendingNode) -
       y * Math.sin(longitudeAscendingNode);
@@ -324,7 +306,6 @@ function createOrbitPath(
       y * Math.cos(longitudeAscendingNode);
     const zRotatedLongAscNode = z;
 
-    // Apply the inclination rotation
     const xFinal = xRotatedLongAscNode;
     const yFinal =
       yRotatedLongAscNode * Math.cos(inclination) -
@@ -352,23 +333,31 @@ function createOrbitPath(
   return orbitPath;
 }
 
-// Function to animate the scene
 function animate() {
   requestAnimationFrame(animate);
   renderer.render(scene, camera);
   controls.update();
+
+  updatePlanetPositions();
 }
 
-// Function to calculate position on orbit
-function calculatePositionOnOrbit(planet, distanceScale, sizeScale) {
-  const anomaly = Math.random() * 2 * Math.PI;
+function calculatePositionOnOrbit(planet, distanceScale, sizeScale, time) {
+  const meanAnomaly =
+    ((2 * Math.PI) / planet.sideralOrbit) * time * speedMultiplier;
+  const eccentricAnomaly = solveKepler(meanAnomaly, planet.eccentricity);
+  const trueAnomaly =
+    2 *
+    Math.atan2(
+      Math.sqrt(1 + planet.eccentricity) * Math.sin(eccentricAnomaly / 2),
+      Math.sqrt(1 - planet.eccentricity) * Math.cos(eccentricAnomaly / 2)
+    );
 
   const radius =
     (planet.semimajorAxis * (1 - planet.eccentricity ** 2)) /
-    (1 + planet.eccentricity * Math.cos(anomaly));
+    (1 + planet.eccentricity * Math.cos(trueAnomaly));
 
-  const x = radius * Math.cos(anomaly);
-  const y = radius * Math.sin(anomaly);
+  const x = radius * Math.cos(trueAnomaly);
+  const y = radius * Math.sin(trueAnomaly);
   const z = 0;
 
   return new THREE.Vector3(
@@ -378,12 +367,104 @@ function calculatePositionOnOrbit(planet, distanceScale, sizeScale) {
   );
 }
 
-// Event listener for window resize
+function solveKepler(M, e, tolerance = 1e-6) {
+  let E = M;
+  let delta = 1;
+  while (Math.abs(delta) > tolerance) {
+    delta = E - e * Math.sin(E) - M;
+    E -= delta / (1 - e * Math.cos(E));
+  }
+  return E;
+}
+
+function updatePlanetPositions() {
+  const elapsedTime = Date.now() * 0.0001;
+  const distanceScale = 1000;
+  const sizeScale = 0.0001;
+
+  planetMeshes.forEach(({ mesh, data }) => {
+    const position = calculatePositionOnOrbit(
+      data,
+      distanceScale,
+      sizeScale,
+      elapsedTime
+    );
+
+    // Update planet mesh position
+    mesh.position.copy(position);
+
+    // Remove existing sphere if it exists
+    const existingSphereMesh = scene.getObjectByName(mesh.name + "Sphere");
+    if (existingSphereMesh) {
+      scene.remove(existingSphereMesh);
+      sphereMeshes = sphereMeshes.filter(
+        (sphere) => sphere !== existingSphereMesh
+      );
+    }
+
+    // Create new sphere mesh
+    const planetColor = colors[data.englishName] || 0xffffff;
+    const planetSize = data.meanRadius * 0.0001;
+    const sphereSizeMultiplier = data.englishName === "Pluto" ? 875000 : 50000;
+    const sphereGeometry = new THREE.SphereGeometry(
+      planetSize * sphereSizeMultiplier,
+      32,
+      32
+    );
+    const sphereMaterial = new THREE.MeshBasicMaterial({
+      color: planetColor,
+      side: THREE.DoubleSide,
+    });
+    const sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
+    sphereMesh.name = mesh.name + "Sphere";
+    sphereMesh.position.copy(position);
+    scene.add(sphereMesh);
+
+    // Add sphere mesh to array for removal tracking
+    sphereMeshes.push(sphereMesh);
+
+    console.log(
+      `Planet: ${data.englishName}, Position: ${position.x}, ${position.y}, ${position.z}`
+    );
+  });
+}
+
+
+function calculateClosestPointOnOrbit(planet, intervalDistance, time) {
+  const meanAnomaly =
+    ((2 * Math.PI) / planet.sideralOrbit) * time * speedMultiplier;
+  const eccentricAnomaly = solveKepler(meanAnomaly, planet.eccentricity);
+  const trueAnomaly =
+    2 *
+    Math.atan2(
+      Math.sqrt(1 + planet.eccentricity) * Math.sin(eccentricAnomaly / 2),
+      Math.sqrt(1 - planet.eccentricity) * Math.cos(eccentricAnomaly / 2)
+    );
+
+  const radius =
+    (planet.semimajorAxis * (1 - planet.eccentricity ** 2)) /
+    (1 + planet.eccentricity * Math.cos(trueAnomaly));
+
+  const x = radius * Math.cos(trueAnomaly);
+  const y = radius * Math.sin(trueAnomaly);
+  const z = 0;
+
+  // Calculate the closest point on the orbit that is a multiple of intervalDistance
+  const distance = Math.sqrt(x * x + y * y + z * z);
+  const numIntervals = Math.floor(distance / intervalDistance);
+  const step = distance / numIntervals;
+
+  const closestX = (x / distance) * numIntervals * step;
+  const closestY = (y / distance) * numIntervals * step;
+  const closestZ = (z / distance) * numIntervals * step;
+
+  return new THREE.Vector3(closestX, closestY, closestZ);
+}
+
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// Initialize the scene
 init();

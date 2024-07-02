@@ -6,6 +6,10 @@ let lastClickTime = 0;
 let highlightSpheres = [];
 let highlightEnabled = false;
 
+// Hitbox sizes
+let sunHitboxSize = 20000; // Initial size for the sun's hitbox
+let planetHitboxSize = 20000; // Initial size for planet hitboxes
+
 export function setupInteraction(
   _mouse,
   _raycaster,
@@ -37,6 +41,100 @@ export function setupInteraction(
   } else {
     console.error("Element with id 'toggleHighlightButton' not found.");
   }
+
+  // Create hitboxes for sun and planets
+  createSunHitbox();
+  createPlanetHitboxes();
+}
+
+function createSunHitbox() {
+  const sunHitboxGeometry = new THREE.BoxGeometry(
+    sunHitboxSize,
+    sunHitboxSize,
+    sunHitboxSize
+  );
+  const sunHitboxMaterial = new THREE.MeshBasicMaterial({
+    transparent: true,
+    opacity: 1,
+  });
+  const sunHitboxMesh = new THREE.Mesh(sunHitboxGeometry, sunHitboxMaterial);
+  sunHitboxMesh.name = "sun"; // Set name to identify the sun
+
+  // Position the hitbox at the sun's position
+  sunHitboxMesh.position.set(0, 0, 0);
+
+  // Add hitbox to the scene
+  scene.add(sunHitboxMesh);
+}
+
+function createPlanetHitbox(planetName, position) {
+  const planetHitboxGeometry = new THREE.BoxGeometry(
+    planetHitboxSize,
+    planetHitboxSize,
+    planetHitboxSize
+  );
+  const planetHitboxMaterial = new THREE.MeshBasicMaterial({
+    transparent: true,
+    opacity: 1,
+  });
+  const planetHitboxMesh = new THREE.Mesh(
+    planetHitboxGeometry,
+    planetHitboxMaterial
+  );
+  planetHitboxMesh.name = planetName; // Set name to identify the planet
+
+  // Position hitbox relative to planet's position
+  planetHitboxMesh.position.copy(position);
+
+  // Add hitbox to the scene
+  scene.add(planetHitboxMesh);
+}
+
+function createPlanetHitboxes() {
+  const planets = [
+    { name: "mercury", position: new THREE.Vector3(100, 0, 0) },
+    { name: "venus", position: new THREE.Vector3(200, 0, 0) },
+    { name: "earth", position: new THREE.Vector3(300, 0, 0) },
+    { name: "mars", position: new THREE.Vector3(400, 0, 0) },
+    { name: "jupiter", position: new THREE.Vector3(500, 0, 0) },
+    { name: "saturn", position: new THREE.Vector3(600, 0, 0) },
+    { name: "uranus", position: new THREE.Vector3(700, 0, 0) },
+    { name: "neptune", position: new THREE.Vector3(800, 0, 0) },
+    { name: "pluto", position: new THREE.Vector3(900000, 0, 0) },
+  ];
+
+  planets.forEach((planet) => {
+    createPlanetHitbox(planet.name, planet.position);
+  });
+}
+
+export function updateHitboxSizes(newSunSize, newPlanetSize) {
+  sunHitboxSize = newSunSize;
+  planetHitboxSize = newPlanetSize;
+
+  // Remove existing hitboxes
+  const sunHitbox = scene.getObjectByName("sun");
+  if (sunHitbox) {
+    scene.remove(sunHitbox);
+  }
+  const planetHitboxes = scene.children.filter((child) =>
+    [
+      "mercury",
+      "venus",
+      "earth",
+      "mars",
+      "jupiter",
+      "saturn",
+      "uranus",
+      "neptune",
+      "pluto",
+    ].includes(child.name)
+  );
+  planetHitboxes.forEach((hitbox) => scene.remove(hitbox));
+
+  // Recreate hitboxes with new sizes
+  createSunHitbox();
+  createPlanetHitboxes();
 }
 
 export function onClick(event) {
@@ -59,40 +157,14 @@ export function onClick(event) {
   if (intersects.length > 0) {
     intersects.sort((a, b) => a.distance - b.distance);
 
-    // Check for clicks on orbitHitbox or transparent spheres
-    const orbitHitbox = intersects.find(
-      (intersect) =>
-        intersect.object.name === "orbitHitbox" ||
-        intersect.object.name === "highlightSphere"
-    );
+    const clickedObject = intersects[0].object;
 
-    if (orbitHitbox) {
-      let objectClicked = orbitHitbox.object.children[0];
-      const currentTime = Date.now();
-
-      if (objectClicked && objectClicked.name) {
-        if (
-          lastClickedObject === orbitHitbox &&
-          currentTime - lastClickTime < 500
-        ) {
-          // Double-click detected on the same orbit
-          highlightOrbit(orbitHitbox);
-        } else {
-          lastClickedObject = orbitHitbox;
-          lastClickTime = currentTime;
-
-          if (objectClicked.name === "sun") {
-            // Clicked on the Sun
-            const translatedName = planetTranslations["Sun"] || "Sonne";
-            updateInfoDisplay(translatedName);
-          } else {
-            // Clicked on a planet
-            const translatedName =
-              planetTranslations[objectClicked.name] || objectClicked.name;
-            updateInfoDisplay(`Clicked planet: ${translatedName}`);
-          }
-        }
-      }
+    if (clickedObject.name) {
+      const translatedName =
+        planetTranslations[clickedObject.name] || clickedObject.name;
+      updateInfoDisplay(translatedName);
+      logClick(clickedObject.name);
+      redirectToSlugPage(clickedObject.name);
     }
   } else {
     // Calculate distance to (0, 0, 0) representing the Sun
@@ -102,13 +174,12 @@ export function onClick(event) {
         Math.pow(camera.position.z, 2)
     );
 
-    // Define the radius of the Sun's hitbox (adjust this value as needed)
-    const sunHitboxRadius = 10; // Adjust this value based on your scene scale
-
     // Check if the click is within the Sun's hitbox
-    if (distanceToSun < sunHitboxRadius) {
+    if (distanceToSun < sunHitboxSize / 2) {
       const translatedName = planetTranslations["Sun"] || "Sonne";
       updateInfoDisplay(translatedName);
+      logClick("sun");
+      redirectToSlugPage("sun");
     } else {
       // Clicked on empty space, so find the closest planet
       let closestPlanet = null;
@@ -176,4 +247,12 @@ function updateInfoDisplay(name) {
   } else {
     console.error("Element with id 'infoText' not found.");
   }
+}
+
+function logClick(name) {
+  console.log(`Clicked on: ${name}`);
+}
+
+function redirectToSlugPage(name) {
+  window.location.href = `./planet.html?planet=${name}`;
 }

@@ -9,10 +9,16 @@
 <body>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script type="module" src="./solar.js"></script>
-    <div id="infoDisplay">
-  <button id="toggleButton">Toggle Info</button>
-  <button id="toggleHighlightButton">Toggle Highlights</button>
-  <div id="infoText">Solar System</div>
+    <div id="sliderContainer">
+    <input type="range" min="1" max="10" value="6" class="slider" id="speedSlider">
+  </div>
+
+  <button id="toggleHighlightButton">Highlights</button>
+  <button id="toggleButton">Umlaufbahn</button>
+
+  <div id="infoDisplay">
+    <div id="infoText">Sonnensystem</div>
+  </div>
 </div>
   </div>
 </div>
