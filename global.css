@@ -1,3 +1,64 @@
-.global {
-    color: white;
+body {
+  margin: 0;
+  overflow: hidden;
 }
+
+ #toggleButton {
+            position: absolute;
+            top: 1em;
+            right: 1em;
+            padding: 0.5em 1em;
+            background-color: #333;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            z-index: 10; /* Ensure the button is on top */
+        }
+
+        #infoDisplay {
+            position: absolute;
+            top: 1.5em;
+            left: 1em;
+            padding: 0.3em;
+            padding-left: 2em;
+            background-color: rgba(11, 0, 53, 0.8);
+            color: rgb(206, 221, 234);
+            font-family: Arial, sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            width: 14em;
+            height: 2em;
+            border-radius: 10px;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            overflow: hidden;
+            white-space: nowrap;
+            border: 0.001em solid rgb(206, 221, 234);
+            z-index: 9; /* Ensure it's below the button */
+        }
+
+        .hide {
+            display: none;
+        }
+
+#toggleHighlightButton {
+  margin-top: 10px;
+  padding: 5px 10px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+#toggleHighlightButton:hover {
+  background-color: #0056b3;
+}
+
+#infoText {
+  padding-left: 0.5em; /* Adjust padding as needed */
+}
+
+
