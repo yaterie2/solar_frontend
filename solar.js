@@ -18,6 +18,21 @@ const planetTranslations = {
   Sun: "Sonne",
 };
 
+const colors = {
+  Mercury: 0xbfbfbf,
+  Venus: 0xffcc00,
+  Earth: 0x0033ff,
+  Mars: 0xff5733,
+  Jupiter: 0xd2b48c,
+  Saturn: 0xffd700,
+  Uranus: 0x00ffff,
+  Neptune: 0x0000ff,
+  Pluto: 0xa9a9a9,
+  Default: 0x808080, // Default grey color for dwarf planets, comets, and asteroids
+};
+
+let spheresVisible = true; // Track the visibility state of spheres
+
 function init() {
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(
@@ -56,6 +71,18 @@ function init() {
     speedMultiplier = (10 / value) ** 2;
   });
 
+  const toggleSphereVisibilityButton = document.getElementById(
+    "toggleSphereVisibilityButton"
+  );
+  if (toggleSphereVisibilityButton) {
+    toggleSphereVisibilityButton.addEventListener(
+      "click",
+      toggleSphereVisibility
+    );
+  } else {
+    console.error("Element with id 'toggleSphereVisibilityButton' not found.");
+  }
+
   fetchDataAndRender();
 }
 
@@ -64,19 +91,38 @@ async function fetchDataAndRender() {
   const planetsUrl = `${API_URL}/planets`;
   const sunUrl = `${API_URL}/sun`;
   const plutoUrl = `${API_URL}/pluto`;
+  const dwarfPlanetsUrl = `${API_URL}/dwarf-planets`;
+  const cometsUrl = `${API_URL}/comets`;
+  const asteroidsUrl = `${API_URL}/asteroids`;
 
   try {
-    const [planetsResponse, sunResponse, plutoResponse] = await Promise.all([
+    const [
+      planetsResponse,
+      sunResponse,
+      plutoResponse,
+      dwarfPlanetsResponse,
+      cometsResponse,
+      asteroidsResponse,
+    ] = await Promise.all([
       axios.get(planetsUrl),
       axios.get(sunUrl),
       axios.get(plutoUrl),
+      axios.get(dwarfPlanetsUrl),
+      axios.get(cometsUrl),
+      axios.get(asteroidsUrl),
     ]);
 
     const planetsData = planetsResponse.data.planets;
     const sunData = sunResponse.data.sun;
     const plutoData = plutoResponse.data.pluto;
+    const dwarfPlanetsData = dwarfPlanetsResponse.data.dwarfPlanets;
+    const cometsData = cometsResponse.data.comets;
+    const asteroidsData = asteroidsResponse.data.asteroids;
 
     renderPlanets(planetsData, sunData, plutoData);
+    renderCelestialBodies(dwarfPlanetsData, "Dwarf Planet");
+    renderCelestialBodies(cometsData, "Comet");
+    renderCelestialBodies(asteroidsData, "Asteroid");
   } catch (error) {
     console.error("Error fetching data:", error);
   }
@@ -86,36 +132,8 @@ let planetMeshes = [];
 let sphereMeshes = []; // To keep track of sphere meshes
 
 function renderPlanets(planetsData, sunData, plutoData) {
-  const colors = {
-    Mercury: 0xbfbfbf,
-    Venus: 0xffcc00,
-    Earth: 0x0033ff,
-    Mars: 0xff5733,
-    Jupiter: 0xd2b48c,
-    Saturn: 0xffd700,
-    Uranus: 0x00ffff,
-    Neptune: 0x0000ff,
-    Pluto: 0xa9a9a9,
-  };
-
   const distanceScale = 1000;
   const sizeScale = 0.0001;
-
-  function addPlanetSphere(mesh) {
-    mesh.addEventListener("mouseover", () => {
-      mesh.material.color.setHex(0xff0000);
-    });
-
-    mesh.addEventListener("click", () => {
-      console.log(`Clicked on ${mesh.name}`);
-    });
-  }
-
-  // Remove existing spheres
-  sphereMeshes.forEach((sphereMesh) => {
-    scene.remove(sphereMesh);
-  });
-  sphereMeshes.length = 0;
 
   planetsData.forEach((planet) => {
     const planetColor = colors[planet.englishName] || 0xffffff;
@@ -153,25 +171,6 @@ function renderPlanets(planetsData, sunData, plutoData) {
       0
     );
     planetMesh.position.copy(position);
-
-    const sphereSizeMultiplier =
-      planet.englishName === "Pluto" ? 875000 : 50000;
-    const sphereGeometry = new THREE.SphereGeometry(
-      planetSize * sphereSizeMultiplier,
-      32,
-      32
-    );
-    const sphereMaterial = new THREE.MeshBasicMaterial({
-      color: planetColor,
-      side: THREE.DoubleSide,
-    });
-    const sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
-    sphereMesh.position.copy(position);
-    scene.add(sphereMesh);
-    sphereMeshes.push(sphereMesh); // Store sphere mesh for later removal
-
-    addPlanetSphere(planetMesh);
-    addPlanetSphere(sphereMesh);
 
     if (planet.moons) {
       planet.moons.forEach((moon, index) => {
@@ -245,32 +244,26 @@ function renderPlanets(planetsData, sunData, plutoData) {
       0
     );
     plutoMesh.position.copy(plutoPosition);
-
-    const plutoSphereSize = plutoSize * 875000;
-    const plutoSphereGeometry = new THREE.SphereGeometry(
-      plutoSphereSize,
-      32,
-      32
-    );
-    const plutoSphereMaterial = new THREE.MeshBasicMaterial({
-      color: plutoColor,
-      side: THREE.DoubleSide,
-    });
-    const plutoSphereMesh = new THREE.Mesh(
-      plutoSphereGeometry,
-      plutoSphereMaterial
-    );
-    plutoSphereMesh.position.copy(plutoPosition);
-    scene.add(plutoSphereMesh);
-    sphereMeshes.push(plutoSphereMesh); // Store sphere mesh for later removal
-
-    addPlanetSphere(plutoMesh);
-    addPlanetSphere(plutoSphereMesh);
-  } else {
-    console.error("No Pluto data fetched.");
   }
 
   animate();
+}
+
+function renderCelestialBodies(data, type) {
+  const sizeScale = 0.0001;
+
+  data.forEach((body) => {
+    const bodySize = body.meanRadius * sizeScale;
+
+    const bodyGeometry = new THREE.SphereGeometry(bodySize, 32, 32);
+    const bodyMaterial = new THREE.MeshStandardMaterial({
+      color: colors.Default,
+    });
+    const bodyMesh = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    bodyMesh.name = `${type} - ${body.name}`;
+
+    scene.add(bodyMesh);
+  });
 }
 
 function createOrbitPath(
@@ -418,6 +411,11 @@ function updatePlanetPositions() {
     const sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
     sphereMesh.name = mesh.name + "Sphere";
     sphereMesh.position.copy(position);
+
+    // Set initial visibility based on a global variable or toggle state
+    const isVisible = true; // Adjust visibility logic here
+    sphereMesh.visible = isVisible;
+
     scene.add(sphereMesh);
 
     // Add sphere mesh to array for removal tracking
@@ -429,36 +427,20 @@ function updatePlanetPositions() {
   });
 }
 
+function toggleSphereVisibility() {
+  // Toggle the visibility state
+  spheresVisible = !spheresVisible;
 
-function calculateClosestPointOnOrbit(planet, intervalDistance, time) {
-  const meanAnomaly =
-    ((2 * Math.PI) / planet.sideralOrbit) * time * speedMultiplier;
-  const eccentricAnomaly = solveKepler(meanAnomaly, planet.eccentricity);
-  const trueAnomaly =
-    2 *
-    Math.atan2(
-      Math.sqrt(1 + planet.eccentricity) * Math.sin(eccentricAnomaly / 2),
-      Math.sqrt(1 - planet.eccentricity) * Math.cos(eccentricAnomaly / 2)
-    );
-
-  const radius =
-    (planet.semimajorAxis * (1 - planet.eccentricity ** 2)) /
-    (1 + planet.eccentricity * Math.cos(trueAnomaly));
-
-  const x = radius * Math.cos(trueAnomaly);
-  const y = radius * Math.sin(trueAnomaly);
-  const z = 0;
-
-  // Calculate the closest point on the orbit that is a multiple of intervalDistance
-  const distance = Math.sqrt(x * x + y * y + z * z);
-  const numIntervals = Math.floor(distance / intervalDistance);
-  const step = distance / numIntervals;
-
-  const closestX = (x / distance) * numIntervals * step;
-  const closestY = (y / distance) * numIntervals * step;
-  const closestZ = (z / distance) * numIntervals * step;
-
-  return new THREE.Vector3(closestX, closestY, closestZ);
+  // Set opacity based on visibility state
+  sphereMeshes.forEach((sphere) => {
+    if (spheresVisible) {
+      sphere.material.opacity = 1;
+      sphere.material.transparent = true; // Ensure transparency is enabled
+    } else {
+      sphere.material.opacity = 0;
+      sphere.material.transparent = true; // Ensure transparency is enabled
+    }
+  });
 }
 
 window.addEventListener("resize", () => {
