@@ -59,7 +59,7 @@ function init() {
 
 // Function to fetch data and render planets
 async function fetchDataAndRender() {
-  const API_URL = "http://localhost:3001/api";
+  const API_URL = "https://solarapp-api.yannick-schwab.de/api";
   const planetsUrl = `${API_URL}/planets`;
   const sunUrl = `${API_URL}/sun`;
   const plutoUrl = `${API_URL}/pluto`;
