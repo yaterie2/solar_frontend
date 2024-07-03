@@ -18,17 +18,18 @@ const planetTranslations = {
   Sun: "Sonne",
 };
 
-const colors = {
-  Mercury: 0xbfbfbf,
-  Venus: 0xffcc00,
-  Earth: 0x0033ff,
-  Mars: 0xff5733,
-  Jupiter: 0xd2b48c,
-  Saturn: 0xffd700,
-  Uranus: 0x00ffff,
-  Neptune: 0x0000ff,
-  Pluto: 0xa9a9a9,
-  Default: 0x808080, // Default grey color for dwarf planets, comets, and asteroids
+const textureLoader = new THREE.TextureLoader();
+
+const textures = {
+  Mercury: textureLoader.load("./images/mercury2k.jpg"),
+  Venus: textureLoader.load("./images/2k_venus_surface.jpg"),
+  Earth: textureLoader.load("./images/2k_earth_daymap.jpg"),
+  Mars: textureLoader.load("./images/2k_mars.jpg"),
+  Jupiter: textureLoader.load("./images/2k_jupiter.jpg"),
+  Saturn: textureLoader.load("./images/2k_saturn.jpg"),
+  Uranus: textureLoader.load("./images/2k_uranus.jpg"),
+  Neptune: textureLoader.load("./images/2k_neptune.jpg"),
+  Pluto: textureLoader.load("./images/plutomap2k.jpg"),
 };
 
 let spheresVisible = true; // Track the visibility state of spheres
@@ -84,7 +85,23 @@ function init() {
   }
 
   fetchDataAndRender();
+  addRandomStars();
 }
+
+// function addRandomStars() {
+//   const starGeometry = new THREE.SphereGeometry(500000, 16, 16);
+//   const starMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+//   for (let i = 0; i < 1000; i++) {
+//     const star = new THREE.Mesh(starGeometry, starMaterial);
+//     star.position.set(
+//       (Math.random() - 0.5) * 200000000,
+//       (Math.random() - 0.5) * 200000000,
+//       (Math.random() - 0.5) * 200000000
+//     );
+//     scene.add(star);
+//   }
+// }
 
 async function fetchDataAndRender() {
   const API_URL = "https://solarapp-api.yannick-schwab.de/api";
@@ -136,12 +153,12 @@ function renderPlanets(planetsData, sunData, plutoData) {
   const sizeScale = 0.0001;
 
   planetsData.forEach((planet) => {
-    const planetColor = colors[planet.englishName] || 0xffffff;
+    const planetTexture = textures[planet.englishName];
     const planetSize = planet.meanRadius * sizeScale;
 
     const planetGeometry = new THREE.SphereGeometry(planetSize, 32, 32);
     const planetMaterial = new THREE.MeshStandardMaterial({
-      color: planetColor,
+      map: planetTexture,
     });
     const planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
     planetMesh.name = planet.englishName;
@@ -196,7 +213,9 @@ function renderPlanets(planetsData, sunData, plutoData) {
   if (sunData) {
     const sunRadius = sunData.meanRadius * sizeScale;
     const sunGeometry = new THREE.SphereGeometry(sunRadius, 32, 32);
-    const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+    const sunMaterial = new THREE.MeshBasicMaterial({
+      map: textureLoader.load("./images/2k_sun.jpg"),
+    });
     const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
     sunMesh.position.set(0, 0, 0);
     scene.add(sunMesh);
@@ -209,12 +228,12 @@ function renderPlanets(planetsData, sunData, plutoData) {
   }
 
   if (plutoData) {
-    const plutoColor = colors.Pluto || 0xfaa0a0;
+    const plutoTexture = textures.Pluto;
     const plutoSize = plutoData.meanRadius * sizeScale;
 
     const plutoGeometry = new THREE.SphereGeometry(plutoSize, 32, 32);
     const plutoMaterial = new THREE.MeshStandardMaterial({
-      color: plutoColor,
+      map: plutoTexture,
       emissive: 0x111111,
       emissiveIntensity: 0.1,
     });
@@ -396,7 +415,7 @@ function updatePlanetPositions() {
     }
 
     // Create new sphere mesh
-    const planetColor = colors[data.englishName] || 0xffffff;
+    const planetTexture = textures[data.englishName] || 0xffffff;
     const planetSize = data.meanRadius * 0.0001;
     const sphereSizeMultiplier = data.englishName === "Pluto" ? 875000 : 50000;
     const sphereGeometry = new THREE.SphereGeometry(
@@ -405,7 +424,7 @@ function updatePlanetPositions() {
       32
     );
     const sphereMaterial = new THREE.MeshBasicMaterial({
-      color: planetColor,
+      map: planetTexture,
       side: THREE.DoubleSide,
     });
     const sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);

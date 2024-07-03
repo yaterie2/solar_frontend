@@ -2,8 +2,12 @@ body {
   margin: 0;
   overflow: hidden;
   font-family: Arial, sans-serif;
-  background-color: #000;
+  background-image: url('./images/4k-star.jpg'); /* Replace with the path to your image */
+  /* background-size: cover; Ensures the image covers the entire background */
+  /* background-position: center; Centers the image */
+  /* background-repeat: no-repeat; Prevents the image from repeating */
 }
+
 
 #sliderContainer {
   position: absolute;
@@ -35,7 +39,7 @@ body {
 }
 
 #toggleSphereVisibilityButton:hover {
-  background-color: #0056b3;
+  background-color: #8601a3;
 }
 
 #toggleButton {
@@ -76,7 +80,7 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  /* background-color: rgba(0, 0, 0, 0.5); */
   z-index: 1000;
   display: none;
   justify-content: center;
