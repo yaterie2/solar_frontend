@@ -1,16 +1,11 @@
+// vite.config.js
 import { defineConfig } from "vite";
-import path from "path";
 
 export default defineConfig({
-  resolve: {
-    alias: {
-      "@images": path.resolve(__dirname, "images"),
-    },
-  },
-  server: {
-    port: 3001,
-  },
+  // other config options
   build: {
-    outDir: "dist",
+    rollupOptions: {
+      //   external: ["axios"], // Add other dependencies here if needed
+    },
   },
 });
