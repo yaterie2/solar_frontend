@@ -30,6 +30,7 @@ const textures = {
   Uranus: textureLoader.load("./images/2k_uranus.jpg"),
   Neptune: textureLoader.load("./images/2k_neptune.jpg"),
   Pluto: textureLoader.load("./images/plutomap2k.jpg"),
+  Sonne: textureLoader.load("./images/2k_sun.jpg"),
 };
 
 let spheresVisible = true; // Track the visibility state of spheres
