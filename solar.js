@@ -215,7 +215,7 @@ function renderPlanets(planetsData, sunData, plutoData) {
     const sunRadius = sunData.meanRadius * sizeScale;
     const sunGeometry = new THREE.SphereGeometry(sunRadius, 32, 32);
     const sunMaterial = new THREE.MeshBasicMaterial({
-      map: textureLoader.load("./images/2k_sun.jpg"),
+      map: textureLoader.load("/images/2ksun.jpg"),
     });
     const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
     sunMesh.position.set(0, 0, 0);
