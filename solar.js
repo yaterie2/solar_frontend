@@ -22,15 +22,15 @@ const textureLoader = new THREE.TextureLoader();
 
 const textures = {
   Mercury: textureLoader.load("images/mercury2k.jpg"),
-  Venus: textureLoader.load("images/2k_venus_surface.jpg"),
-  Earth: textureLoader.load("images/2k_earth_daymap.jpg"),
-  Mars: textureLoader.load("images/2k_mars.jpg"),
-  Jupiter: textureLoader.load("images/2k_jupiter.jpg"),
-  Saturn: textureLoader.load("images/2k_saturn.jpg"),
-  Uranus: textureLoader.load("images/2k_uranus.jpg"),
-  Neptune: textureLoader.load("images/2k_neptune.jpg"),
+  Venus: textureLoader.load("images/2kvenussurface.jpg"),
+  Earth: textureLoader.load("images/2kearthdaymap.jpg"),
+  Mars: textureLoader.load("images/2kmars.jpg"),
+  Jupiter: textureLoader.load("images/2kjupiter.jpg"),
+  Saturn: textureLoader.load("images/2ksaturn.jpg"),
+  Uranus: textureLoader.load("images/2kuranus.jpg"),
+  Neptune: textureLoader.load("images/2kneptune.jpg"),
   Pluto: textureLoader.load("images/plutomap2k.jpg"),
-  Sonne: textureLoader.load("images/2k_sun.jpg"),
+  Sonne: textureLoader.load("images/2ksun.jpg"),
 };
 
 let spheresVisible = true; // Track the visibility state of spheres
