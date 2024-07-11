@@ -89,20 +89,20 @@ function init() {
   addRandomStars();
 }
 
-// function addRandomStars() {
-//   const starGeometry = new THREE.SphereGeometry(500000, 16, 16);
-//   const starMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+function addRandomStars() {
+  const starGeometry = new THREE.SphereGeometry(500000, 16, 16);
+  const starMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
-//   for (let i = 0; i < 1000; i++) {
-//     const star = new THREE.Mesh(starGeometry, starMaterial);
-//     star.position.set(
-//       (Math.random() - 0.5) * 200000000,
-//       (Math.random() - 0.5) * 200000000,
-//       (Math.random() - 0.5) * 200000000
-//     );
-//     scene.add(star);
-//   }
-// }
+  for (let i = 0; i < 1000; i++) {
+    const star = new THREE.Mesh(starGeometry, starMaterial);
+    star.position.set(
+      (Math.random() - 0.5) * 200000000,
+      (Math.random() - 0.5) * 200000000,
+      (Math.random() - 0.5) * 200000000
+    );
+    scene.add(star);
+  }
+}
 
 async function fetchDataAndRender() {
   const API_URL = "https://solarapp-api.yannick-schwab.de/api";
